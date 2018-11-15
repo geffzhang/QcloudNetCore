@@ -48,7 +48,7 @@ ASP.NET是2002年发布的第一个.NET Framework版本，并不断发展。尽�
 可怜的低分并不意外。如前所述，ASP.NET知道改变现状只能通过重写整个架构来清除障碍。这正是发生的事情。
 ASP.NET团队着手构建ASP.NET Core，几个月后，该团队庆祝asp.net core每秒超过100万个请求。最新asp.net core 性能已经跨入顶级序列，我们来看最新一期的TechEmpower基准测试[第十七轮测试](https://www.techempower.com/benchmarks/#section=data-r17&hw=ph&test=plaintext)， 
 17轮的测试使用的是ASP.NET Core 2.1
- 
+ ![第十七轮测试](resource/techpower17.png ''第十七轮测试'')
 * .NET Core不是从头开始的
 
 .NET在2000年就已经出现了。.NET Framework代码在过去几年中已经得到了巩固，开发人员也从中受益。已经被移植到.NET Core的大部分.NET Framework代码都没有改变。这使得.NET Core在构建应用程序的可靠框架方面领先一步。.NET Core也完全由Microsoft支持。这降低了为您的应用程序使用.NET Core的风险。
