@@ -1,6 +1,6 @@
 # <a name="visual-studio-tools-for-docker-with-aspnet-core"></a>使用 ASP.NET Core 的 Visual Studio Tools for Docker
 
-Visual Studio 2017 支持生成、调试和运行面向 .NET Core 的容器化 ASP.NET Core 应用。 Windows 和 Linux 容器均受支持。
+使用 Visual Studio Code 和 Docker CLI 时，Visual Studio Tools for Docker 开发工作流是类似于工作流。 实际上，它基于相同的 Docker CLI，但它是更轻松地开始，可以简化此过程中，并提供了提高工作效率生成、 运行和组合任务。 执行和调试简单的操作，例如通过容器F5并Ctrl+F5。 通过可选容器业务流程支持，除了能够运行和调试单个容器，可运行和调试容器Visual Studio 2017 支持生成、调试和运行面向 .NET Core 的容器化 ASP.NET Core 应用。 Windows 和 Linux 容器均受支持。
 
 [查看或下载示例代码](https://github.com/aspnet/Docs/tree/master/aspnetcore/host-and-deploy/docker/visual-studio-tools-for-docker/samples)（[如何下载](xref:index#how-to-download-a-sample)）
 
@@ -55,10 +55,6 @@ Dockerfile，用作创建最终 Docker 映像的方案，添加到项目根目�
 
 如果选中了新建项目对话框的“为 HTTPS 配置”复选框，则 Dockerfile 公开两个端口。 一个端口用于 HTTP 流量；另一个端口用于 HTTPS。 如果未选中该复选框，则为 HTTP 流量公开单个端口 (80)。
 
-::: moniker-end
-
-::: moniker range="<= aspnetcore-2.0"
-
 FROM microsoft/dotnet:2.1-aspnetcore-runtime AS base
 WORKDIR /app
 EXPOSE 59518
@@ -82,13 +78,11 @@ ENTRYPOINT ["dotnet", "HelloDockerTools.dll"]
 
 前面的 Dockerfile 基于 [microsoft/aspnetcore](https://hub.docker.com/r/microsoft/aspnetcore/) 映像。 此基础映像包括 ASP.NET Core NuGet 包，对该包进行了实时编译 (JIT)，以提高启动性能。
 
-::: moniker-end
 
 ## <a name="debug"></a>调试
 
 在工具栏的调试下拉列表中选择“Docker”，然后开始调试应用。 “输出”窗口的“Docker”视图显示发生的以下操作：
 
-::: moniker range=">= aspnetcore-2.1"
 
 * 已获取 microsoft/dotnet 运行时映像的 2.1-aspnetcore-runtime 标记（如果缓存中尚不存在）。 该映像可安装 ASP.NET Core 和.NET Core 运行时及其关联的库。 在生产环境中针对运行 ASP.NET Core 应用对其进行了优化。
 * `ASPNETCORE_ENVIRONMENT` 环境变量设置为容器内的 `Development`。
@@ -104,10 +98,7 @@ hellodockertools  dev                     d72ce0f1dfe7  30 seconds ago  255MB
 microsoft/dotnet  2.1-aspnetcore-runtime  fcc3887985bb  6 days ago      255MB
 ```
 
-::: moniker-end
-
-::: moniker range="<= aspnetcore-2.0"
-
+ 
 * 已获取 microsoft/aspnetcore 运行时映像（如果缓存中尚不存在）。
 * `ASPNETCORE_ENVIRONMENT` 环境变量设置为容器内的 `Development`。
 * 端口 80 公开，并映射到 localhost 的动态分配端口。 该端口由 Docker 主机确定，并且可以使用 `docker ps` 进行查询。
@@ -122,8 +113,7 @@ hellodockertools      dev  5fafe5d1ad5b  4 minutes ago  347MB
 microsoft/aspnetcore  2.0  c69d39472da9  13 days ago    347MB
 ```
 
-::: moniker-end
-
+ 
 > [!NOTE]
 > 因为“调试”配置使用卷装载提供迭代体验，因此，开发映像中缺少应用内容。 要推送映像，请使用“发布”配置。
 
@@ -151,19 +141,13 @@ baf9a678c88d        hellodockertools:dev   "C:\\remote_debugge..."   10 minutes 
 
 在 PMC 中运行 `docker images` 命令，查看映像列表。 显示了类似下面的输出：
 
-::: moniker range=">= aspnetcore-2.1"
-
-```console
+ ```console
 REPOSITORY        TAG                     IMAGE ID      CREATED             SIZE
 hellodockertools  latest                  e3984a64230c  About a minute ago  258MB
 hellodockertools  dev                     d72ce0f1dfe7  4 minutes ago       255MB
 microsoft/dotnet  2.1-sdk                 9e243db15f91  6 days ago          1.7GB
 microsoft/dotnet  2.1-aspnetcore-runtime  fcc3887985bb  6 days ago          255MB
 ```
-
-::: moniker-end
-
-::: moniker range="<= aspnetcore-2.0"
 
 ```console
 REPOSITORY                  TAG     IMAGE ID      CREATED         SIZE
@@ -175,9 +159,45 @@ microsoft/aspnetcore        2.0     c69d39472da9  13 days ago     347MB
 
 自 .NET Core 2.1 起，前面的输出中列出的 `microsoft/aspnetcore-build` 和 `microsoft/aspnetcore` 映像替换为 `microsoft/dotnet` 映像。 有关详细信息，请参阅 [Docker 存储库迁移公告](https://github.com/aspnet/Announcements/issues/298)。
 
-::: moniker-end
-
+ 
 > [!NOTE]
 > `docker images` 命令返回存储库名称和标记标识为 \<none> （上面未列出）的中间映像。 这些未命名映像由[多阶段生成](https://docs.docker.com/engine/userguide/eng-image/multistage-build/) *Dockerfile* 生成。 它们可提高生成最终映像的效率 &mdash; 发生更改时，仅重新生成必要的层。 不再需要中间映像时，请使用 [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/) 命令将其删除。
 
 可能希望生产或发布映像的大小比开发映像小。 由于卷映射，调试程序和应用从本地计算机运行，而不在容器内运行。 最新映像已打包必要的应用代码，以在主机上运行应用。 因此，增量是应用代码的大小。
+
+## <a name="publish-docker-tencentyun-images"></a>使用Visual Studio将ASP.NET容器部署到容器仓库
+
+使用Visual Studio将容器化应用程序发布到[腾讯云容器仓库](https://cloud.tencent.com/document/product/457/9118)
+
+### 创建ASP.NET Core Web应用程序
+以下步骤将指导您创建将在本教程中使用的基本ASP.NET Core应用程序。
+
+1. 从Visual Studio菜单中，选择“ 文件”>“新建”>“项目”。
+2. 在“ 新建项目”对话框的“ 模板”部分下，选择“ Visual C＃> Web”。
+3. 选择ASP.NET Core Web Application。
+4. 为新应用程序命名（或采用默认值），然后选择“ 确定”。
+5. 选择Web应用程序。
+6. 选中Enable Docker Support复选框。
+7. 选择所需的容器类型（Windows或Linux），然后单击“ 确定”。
+
+![用visual studio创建容器化asp.net core 应用](./resource/createdockerappwithvs2017.png)
+
+## 2. 将容器发布到腾讯云容器仓库
+1. 在Solution Explorer中右键单击您的项目，然后选择Publish。
+
+2. 在发布目标对话框中，选择“ 容器仓库”选项卡。
+
+3. 选择Custom，然后单击Publish。
+
+4. 在“容器仓库”中填写所需的值。
+
+![发布到腾讯云容器仓库](./resource/publishdockertotencentyun.png)
+
+这里我们使用的是腾讯云的私有容器仓库 https://ccr.ccs.tencentyun.com/dotnet/ ，其中dotnet 是我创建的命名空间。镜像仓库用于存放Docker镜像，Docker镜像用于部署容器服务，每个镜像有特定的唯一标识（镜像的Registry地址+镜像名称+镜像Tag）。具体参考文档[镜像仓库基本教程](https://cloud.tencent.com/document/product/457/9117)
+
+5. 单击发布，就可以把镜像发布到腾讯云容器仓库
+![发布镜像到腾讯云容器仓库](./resource/publishdockertotencentyun0.png)
+
+
+您现在可以将容器从注册表中拉到任何能够运行Docker镜像的主机. 下面是我发布到腾讯云的镜像：
+![腾讯云的镜像](./resource/dockerregisterontencentyun.png)
