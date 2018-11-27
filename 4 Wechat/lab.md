@@ -4,10 +4,17 @@
 ## 二、准备工作
 1、	已申请公众号账号或个人微信公众平台接口测试帐号
 2、	已注册腾讯云账号
-3、	下载微信公众号Demo代码 https://github.com/geffzhang/TencentCloudMPSample 
+3、 购买一个Mysql 服务 和一个 Redis服务
+4、 开通Tencent Hub 服务
+5、 开通腾讯云容器服务
+6、	下载微信公众号Demo代码 https://github.com/geffzhang/TencentCloudMPSample 
 
 ## 三、实验架构
 ![架构图](./resource/labarch.png)
+
++ 使用腾讯云容器服务TKE 来托管我们的公众号服务
++ 公众号服务使用了腾讯云的4 个PasS服务：机器翻译、智能语音、MySQL以及Redis 服务
++ 公众号使用的机器翻译和智能语音服务进行单独的封装成2个微服务
 
 ## 四、任务一：使用 Senparc.Weixin 接入微信公众号开发
 
