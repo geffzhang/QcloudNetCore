@@ -39,6 +39,7 @@ IP白名单：设置自己配置服务器的地址；
 我们就借助WeChatSampleBuilder 来生成微信公众号代码，我们需要启用Redis 缓存。
  
 生成的示例代码中，我们把微信处理消息的代码拷到我们的项目中。
+![生成代码](./resource/senparcsamplebuilder.png)
 
 ### 请求处理
 在上面的处理请求信息的代码中，我自定义了一个类 CustomMessageHandler 来处理消息。
@@ -58,16 +59,82 @@ ResponseMessageXXX - 其他类型以此类推
 1.Nuget 添加Microsoft.EntityFrameworkCore 与Pomelo.EntityFrameworkCore.MySql包.
 
 2.添加实体 WeixinInteraction.cs 
-![记录请求交互](./resource/wechatInteraction.png)
+
+```
+   public class WeixinInteraction
+    {
+        [Key]
+        public int Id { get; set; }
+
+        public string Request { get; set; }
+
+        public string Response { get; set; }
+    }
+```
 
 3.添加TencentCloudDbContext.cs继承EF的DBContext类。 
 
-4.添加数据库操作类WeixinInteractionServer.cs 
+```
+namespace TencentCloudMPSample.EFCore
+{
+    public class TencentCloudDbContext : DbContext
+    {
+        public TencentCloudDbContext(DbContextOptions<TencentCloudDbContext> options):base(options)
+        {
+        }
 
+        public DbSet<WeixinInteraction> WeixinInteractions { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+        }
+    }
+}
+```
+
+4.添加数据库操作类WeixinInteractionServer.cs 
+```
+namespace TencentCloudMPSample.EFCore.Servers
+{
+    public class WeixinInteractionServer
+    {
+        private TencentCloudDbContext _dbContext;
+
+        public WeixinInteractionServer(TencentCloudDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+        public async Task AddInteraction(string request,string response)
+        {
+            await _dbContext.WeixinInteractions.AddAsync(new WeixinInteraction { Request = request, Response = response });
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<List<WeixinInteraction>> GetWeixinInteractions()
+        {
+            var list = await _dbContext.WeixinInteractions.ToListAsync();
+            return list;
+        }
+
+    }
+}
+```
 5.配置mysql连接字符串
 
-6.StartUp类中注入DbContext和WeixinInteractionServer 
+```
+  "ConnectionStrings": {
+    "Mysql": "server=192.168.0.4;uid=root;pwd=pwd@2018;port=3306;pooling=true;CharSet=utf8mb4;database=TencentCloudMP;sslmode=none;"
+  },
+```
 
+6.StartUp类中注入DbContext和WeixinInteractionServer 
+```
+            services.AddDbContext<TencentCloudDbContext>(option => option.UseMySql(Configuration.GetConnectionString("Mysql")));
+            services.AddScoped<WeixinInteractionServer>();
+            services.AddHttpContextAccessor();
+```
 7.使用命令Add-Migration Init 和Update-Database迁移数据库
 
 8.在WeixinController注入并使用WeixinInteractionServer记录交互信息。
@@ -122,7 +189,20 @@ ResponseMessageXXX - 其他类型以此类推
 添加文本翻译请求方法
  
 在CustomMessageHandler的OnTextRequest中调用翻译服务
- 
+ ```
+        /// <summary>
+        /// 处理文字请求
+        /// </summary>
+        /// <returns></returns>
+        public override IResponseMessageBase OnTextRequest(RequestMessageText requestMessage)
+        {
+            var defaultResponseMessage = base.CreateResponseMessage<ResponseMessageText>();
+            var mtServer = new MachineTranslationServe();
+            var tranText = mtServer.TextTranslate(requestMessage.Content).ConfigureAwait(false).GetAwaiter().GetResult();
+            defaultResponseMessage.Content = tranText;
+            return defaultResponseMessage;
+        }
+ ```
 
 
 ## 六、任务三：处理公众号语音信息
@@ -153,14 +233,40 @@ ResponseMessageXXX - 其他类型以此类推
 添加一句话识别请求方法
  
 在CustomMessageHandler的OnVoiceRequest中调用一句话识别服务
- 
-
+```
+        /// 处理语音请求
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        public override IResponseMessageBase OnVoiceRequest(RequestMessageVoice requestMessage)
+        {
+            var responseMessage = CreateResponseMessage<ResponseMessageText>();
+            var path = MediaApi.Get(appId, requestMessage.MediaId, $"{Server.AppDomainAppPath}App_Data/Audio/");
+            var outPutPath = $"{path.Substring(0, path.Length - 4)}.mp3";
+            var success = FFmpegUtil.Arm2Mp3Async(path, outPutPath).ConfigureAwait(false).GetAwaiter().GetResult();
+            if (success)
+            {
+                var intelligentVoiceServer = new IntelligentVoiceServer();
+                var text = intelligentVoiceServer.Voice2Text(outPutPath).ConfigureAwait(false).GetAwaiter().GetResult();
+                responseMessage.Content = text;
+                File.Delete(path);
+                File.Delete(outPutPath);
+            }
+            else
+            {
+                File.Delete(path);
+                responseMessage.Content = "转换失败";
+            }
+            return responseMessage;
+        }
+```
 由于公众号音频文件个是为amr，所以需要使用FFmpen工具讲amr转码成MP3格式。
 这里使用Xabe.FFmpeg的nuget包，非商业项目可以使用。
  
 
 ##七、任务四：部署到容器服务
-打包容器镜像并推送至腾讯云容器服务
+打包容器镜像并推送至腾讯云容器服务,首先在Tencent Hub上建立一个组织和项目仓库。
+
 1.登陆腾讯云容器服务
 ```
 Windows下使用命令docker login --username=[username] hub.tencentyun.com
@@ -172,6 +278,7 @@ Windows下使用命令docker login --username=[username] hub.tencentyun.com
 使用docker build -t [name] . 命令打包镜像
 
 3.给镜像打标签
+
 ```
 使用命令
 docker tag [镜像ID] hub.tencentyun.com/[组织名称]/[项目仓库]: [tag]
@@ -193,4 +300,5 @@ docker push hub.tencentyun.com/[组织名称]/[项目仓库]: [tag]
 新建集群
 若已有集群可以忽略此步
 1.进入腾讯云容器服务，点击集群，新建。
+
 2.根据步骤配置集群。
