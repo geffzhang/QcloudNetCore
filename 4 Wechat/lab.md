@@ -4,7 +4,7 @@
 ## 二、准备工作
 1、	已申请公众号账号或个人微信公众平台接口测试帐号
 2、	已注册腾讯云账号
-3、 购买一个Mysql 服务 和一个 Redis服务
+![镜像仓库![项目仓库3](./resource/dd.png)](./resource/dd.png)、 购买一个Mysql 服务 和一个 Redis服务
 4、 开通Tencent Hub 服务
 5、 开通腾讯云容器服务
 6、	下载微信公众号Demo代码 https://github.com/geffzhang/TencentCloudMPSample 
@@ -267,7 +267,7 @@ namespace TencentCloudMPSample.EFCore.Servers
             return responseMessage;
         }
 ```
-由于公众号音频文件个是为amr，所以需要使用FFmpen工具讲amr转码成MP3格式。
+由于公众号音频文件个是为amr，所以需要使用FFmpeg工具将 amr转码成MP3格式。
 这里使用Xabe.FFmpeg的nuget包，非商业项目可以使用。
  
 
@@ -276,7 +276,8 @@ namespace TencentCloudMPSample.EFCore.Servers
 
 1.登陆腾讯云容器服务
 ```
-Windows下使用命令docker login --username=[username] hub.tencentyun.com
+Windows下使用命令
+docker login --username=[username] hub.tencentyun.com
 ```
 输入密码后验证成功则可以推送镜像到腾讯云容器服务
 
@@ -302,10 +303,11 @@ docker push hub.tencentyun.com/[组织名称]/[项目仓库]: [tag]
 5.查看镜像仓库中的镜像
 
 登陆腾讯云进入Tencent Hub，选择项目仓库查看镜像
- 
+ ![镜像仓库](./resource/tencenthub.png)
 
 新建集群
 若已有集群可以忽略此步
 1.进入腾讯云容器服务，点击集群，新建。
 
 2.根据步骤配置集群。
+ ![微信公众号集群](./resource/mptke.png)
